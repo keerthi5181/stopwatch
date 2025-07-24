@@ -1,52 +1,46 @@
-const express = require('express');
-const app = express();
-const port = 3000;
+from flask import Flask, jsonify, request
+import time
 
-let stopwatch = {
-  startTime: null,
-  elapsedTime: 0,
-  running: false,
-};
+app = Flask(__name__)
 
-app.use(express.json());
+stopwatch = {
+    "start_time": None,
+    "elapsed_time": 0,
+    "running": False,
+}
 
-app.post('/start', (req, res) => {
-  if (!stopwatch.running) {
-    stopwatch.startTime = new Date().getTime() - stopwatch.elapsedTime;
-    stopwatch.running = true;
-    res.send({ message: 'Stopwatch started' });
-  } else {
-    res.send({ message: 'Stopwatch is already running' });
-  }
-});
+@app.route('/start', methods=['POST'])
+def start_stopwatch():
+    if not stopwatch["running"]:
+        stopwatch["start_time"] = time.time() - stopwatch["elapsed_time"]
+        stopwatch["running"] = True
+        return jsonify({"message": "Stopwatch started"})
+    else:
+        return jsonify({"message": "Stopwatch is already running"})
 
-app.post('/stop', (req, res) => {
-  if (stopwatch.running) {
-    stopwatch.elapsedTime = new Date().getTime() - stopwatch.startTime;
-    stopwatch.running = false;
-    res.send({ message: 'Stopwatch stopped', elapsedTime: stopwatch.elapsedTime / 1000 });
-  } else {
-    res.send({ message: 'Stopwatch is not running' });
-  }
-});
+@app.route('/stop', methods=['POST'])
+def stop_stopwatch():
+    if stopwatch["running"]:
+        stopwatch["elapsed_time"] = time.time() - stopwatch["start_time"]
+        stopwatch["running"] = False
+        return jsonify({"message": "Stopwatch stopped", "elapsed_time": stopwatch["elapsed_time"]})
+    else:
+        return jsonify({"message": "Stopwatch is not running"})
 
-app.post('/reset', (req, res) => {
-  stopwatch.startTime = null;
-  stopwatch.elapsedTime = 0;
-  stopwatch.running = false;
-  res.send({ message: 'Stopwatch reset' });
-});
+@app.route('/reset', methods=['POST'])
+def reset_stopwatch():
+    stopwatch["start_time"] = None
+    stopwatch["elapsed_time"] = 0
+    stopwatch["running"] = False
+    return jsonify({"message": "Stopwatch reset"})
 
-app.get('/status', (req, res) => {
-  if (stopwatch.running) {
-    const currentTime = new Date().getTime();
-    const elapsedTime = currentTime - stopwatch.startTime;
-    res.send({ running: true, elapsedTime: elapsedTime / 1000 });
-  } else {
-    res.send({ running: false, elapsedTime: stopwatch.elapsedTime / 1000 });
-  }
-});
+@app.route('/status', methods=['GET'])
+def get_status():
+    if stopwatch["running"]:
+        elapsed_time = time.time() - stopwatch["start_time"]
+        return jsonify({"running": True, "elapsed_time": elapsed_time})
+    else:
+        return jsonify({"running": False, "elapsed_time": stopwatch["elapsed_time"]})
 
-app.listen(port, () => {
-  console.log(`Stopwatch backend listening on port ${port}`);
-});
+if __name__ == '__main__':
+    app.run(debug=True)
